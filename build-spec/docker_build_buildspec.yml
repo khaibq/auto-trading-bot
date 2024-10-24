@@ -1,0 +1,19 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging into Amazon ECR
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+  build:
+    commands:
+      - echo Entered the post_build phase...
+      - echo Build completed on `date`
+      - docker build -t ${IMAGE_NAME} docker-build/
+      - docker tag $IMAGE_NAME:latest $ECR_URI:latest
+      - docker push $ECR_URI:latest
+  post_build:
+    commands:
+      - echo Update function code ...
+      - aws lambda update-function-code --function-name $FUNCTION_NAME --image-uri $ECR_URI:latest --query "FunctionName"
+
